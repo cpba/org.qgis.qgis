@@ -298,7 +298,7 @@
                             "buildsystem": "simple",
                             "build-commands": [
                                 "./configure --prefix=${FLATPAK_DEST} --enable-reentrant",
-                                "make shared",
+                                "make shared -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`}",
                                 "make install"
                             ],
                             "sources": [
@@ -328,7 +328,7 @@
                             "name": "cryptopp",
                             "buildsystem": "simple",
                             "build-commands": [
-                                "make shared all",
+                                "make shared all -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`}",
                                 "make install PREFIX=${FLATPAK_DEST}"
                             ],
                             "sources": [
@@ -541,11 +541,6 @@
                         "cp -rv ${FLATPAK_DEST}/potato/usr/* /app",
                         "rm -rf ${FLATPAK_DEST}/potato"
                     ],
-                    "build-options":{
-                        "env":{
-                            "QMAKEPATH": "/app/lib"
-                        }
-                    },
                     "sources" : [
                         {
                             "type" : "archive",
@@ -567,10 +562,6 @@
                                     "url" : "https://pypi.python.org/packages/source/s/sip/sip-6.0.2.tar.gz",
                                     "sha256" : "38633bfaa479b1dd35df8f414ffc5c5a342f174ca0c6a21d0e8eb359e33c35b9"
                                 }
-                            ],
-                            "cleanup" : [
-                                "/bin",
-                                "/include"
                             ]
                         },
                         {
@@ -668,23 +659,27 @@
                     "sources" : [
                         {
                             "type" : "archive",
-                            "url" : "https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.11.6/QScintilla-2.11.6.tar.gz",
-                            "sha256" : "e7346057db47d2fb384467fafccfcb13aa0741373c5d593bc72b55b2f0dd20a7"
+                            "url" : "https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.12.0/QScintilla_src-2.12.0.tar.gz",
+                            "sha256" : "2116181cce3076aa4897e36182532d0e6768081fb0cf6dcdd5be720519ab1434"
                         }
                     ],
                     "build-commands" : [
-                        "sed -e 's|\\(target.path\\) = .*|\\1 = /app/lib|' -i Qt4Qt5/qscintilla.pro",
-                        "sed -e 's|\\(header.path\\) = .*|\\1 = /app/include|' -i Qt4Qt5/qscintilla.pro",
-                        "sed -e 's|\\(trans.path\\) = .*|\\1 = /app/share/qt5/translations|' -i Qt4Qt5/qscintilla.pro",
-                        "sed -e 's|\\(qsci.path\\) = .*|\\1 = /app/share/qt5|' -i Qt4Qt5/qscintilla.pro",
-                        "sed -e 's|\\(features.path\\) = .*|\\1 = /app/lib/qt5/mkspecs/features|' -i Qt4Qt5/qscintilla.pro",
+                        "sed -e 's|\(target.path\) = .*|\1 = /app/lib|' -i src/qscintilla.pro",
+                        "sed -e 's|\(header.path\) = .*|\1 = /app/include|' -i src/qscintilla.pro",
+                        "sed -e 's|\(trans.path\) = .*|\1 = /app/share/qt5/translations|' -i src/qscintilla.pro",
+                        "sed -e 's|\(qsci.path\) = .*|\1 = /app/share/qt5|' -i src/qscintilla.pro",
+                        "sed -e 's|\(features.path\) = .*|\1 = /app/lib/qt5/mkspecs/features|' -i src/qscintilla.pro",
                         "sed -e \"s|qmake = {'CONFIG': 'qscintilla2'}|qmake = {'CONFIG': 'qscintilla2', 'QT': 'widgets printsupport'}|\" -i Python/configure.py",
-                        "cd Qt4Qt5 && qmake && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`}",
-                        "make install -C Qt4Qt5",
-                        "sip-build --target-dir /app/lib/python3.8/site-packages/ --no-make --qsci-features-dir Qt4Qt5/features --qsci-include-dir Qt4Qt5 --qsci-library-dir Qt4Qt5",
-                        "echo \"LIBS += /app/lib/libqscintilla2_qt5.so\" >> build/Qsci/Qsci.pro",
-                        "echo \"QT += widgets printsupport\" >> build/Qsci/Qsci.pro",
-                        "cd build && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install"
+
+                        "# make install -C Qt4Qt5",
+                        "# sip-build --target-dir /app/lib/python3.8/site-packages/ --no-make --qsci-features-dir Qt4Qt5/features --qsci-include-dir Qt4Qt5 --qsci-library-dir Qt4Qt5",
+                        "# echo \"LIBS += /app/lib/libqscintilla2_qt5.so\" >> build/Qsci/Qsci.pro",
+                        "# echo \"QT += widgets printsupport\" >> build/Qsci/Qsci.pro",
+
+                        "cd src && qmake && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install",
+                        "cd Python && sip-install",
+                        "echo \"LIBS += /app/lib/libqscintilla2_qt5.so\" >> Python/Qsci/Qsci.pro",
+                        "cd Python && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install"
                     ]
                 },
                 {
@@ -712,8 +707,8 @@
                     "sources": [
                         {
                             "type": "file",
-                            "url": "https://pypi.python.org/packages/16/d8/bc6316cf98419719bd59c91742194c111b6f2e85abac88e496adefaf7afe/six-1.11.0.tar.gz",
-                            "sha256": "70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9"
+                            "url": "https://files.pythonhosted.org/packages/ee/ff/48bde5c0f013094d729fe4b0316ba2a24774b3ff1c52d924a8a4cb04078a/six-1.15.0-py2.py3-none-any.whl",
+                            "sha256": "8b74bedcbbbaca38ff6d7491d76f2b06b3592611af620f8426e82dddb04a5ced"
                         }
                     ]
                 },
@@ -736,10 +731,10 @@
                     "buildsystem" : "simple",
                     "build-commands" : [
                         "pip3 install --prefix=/app python_dateutil-*",
-                        "pip3 install --prefix=/app pytz-2018.4-py2.py3-none-any.whl",
-                        "pip3 install --prefix=/app requests-2.14.2-py2.py3-none-any.whl",
-                        "pip3 install --prefix=/app pyproj-1.9.6.tar.gz",
-                        "pip3 install --prefix=/app OWSLib-0.16.0.tar.gz"
+                        "pip3 install --prefix=/app pytz-*",
+                        "pip3 install --prefix=/app requests-*",
+                        "pip3 install --prefix=/app pyproj-*",
+                        "pip3 install --prefix=/app OWSLib-*"
                     ],
                     "sources" : [
                         {
@@ -753,9 +748,9 @@
                             "sha256" : "65ae0c8101309c45772196b21b74c46b2e5d11b6275c45d251b150d5da334555"
                         },
                         {
-                            "type" : "file",
-                            "url" : "https://pypi.python.org/packages/e4/b0/286e8a936158e5cc5791d5fa3bc4b1d5a7e1ff4e5b3f3766b63d8e97708a/requests-2.14.2-py2.py3-none-any.whl",
-                            "sha256" : "3b39cde35be51762885631cf586f4dc2284951b44d479a4454020758d767cc2f"
+                            "type": "file",
+                            "url": "https://files.pythonhosted.org/packages/39/fc/f91eac5a39a65f75a7adb58eac7fa78871ea9872283fb9c44e6545998134/requests-2.25.0-py2.py3-none-any.whl",
+                            "sha256": "e786fa28d8c9154e6a4de5d46a1d921b8749f8b74e28bde23768e5e16eece998"
                         },
                         {
                             "type" : "file",
@@ -821,7 +816,7 @@
                                 {
                                     "type": "git",
                                     "url": "https://github.com/facebook/zstd.git",
-                                    "branch" : "v1.4.8"
+                                    "branch" : "v1.4.9"
                                 }
                             ]
                         }
