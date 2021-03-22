@@ -145,7 +145,7 @@
                         {
                             "type": "git",
                             "url": "https://github.com/facebook/zstd.git",
-                            "branch" : "v1.4.8"
+                            "branch" : "v1.4.9"
                         }
                     ]
                 },
@@ -536,7 +536,7 @@
                     "name" : "pyqt5",
                     "buildsystem" : "simple",
                     "build-commands" : [
-                        "sip-build --confirm-license --no-make --no-designer-plugin --no-qml-plugin",
+                        "sip-build --confirm-license --no-make --api-dir /app/share/qt/qsci/api/python",
                         "cd build && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install INSTALL_ROOT=${FLATPAK_DEST}/potato",
                         "cp -rv ${FLATPAK_DEST}/potato/usr/* /app",
                         "rm -rf ${FLATPAK_DEST}/potato"
@@ -544,8 +544,8 @@
                     "sources" : [
                         {
                             "type" : "archive",
-                            "url" : "https://pypi.python.org/packages/source/P/PyQt5/PyQt5-5.15.3.tar.gz",
-                            "sha256" : "965ba50e7029b37f218a54ace24e87c77db3e5a9f0b83baeb21fb57b4154b838"
+                            "url" : "https://pypi.python.org/packages/source/P/PyQt5/PyQt5-5.15.4.tar.gz",
+                            "sha256" : "2a69597e0dd11caabe75fae133feca66387819fc9bc050f547e5551bce97e5be"
                         }
                     ],
                     "modules" : [
@@ -625,8 +625,8 @@
                             "sources" : [
                                 {
                                     "type" : "archive",
-                                    "url" : "https://pypi.python.org/packages/source/P/PyQt-builder/PyQt-builder-1.5.0.tar.gz",
-                                    "sha256" : "11bbe26e8e3d5ffec6d2ef2f50596b1670eb2d8b49aee0f859821922d8282841"
+                                    "url" : "https://pypi.python.org/packages/source/P/PyQt-builder/PyQt-builder-1.9.1.tar.gz",
+                                    "sha256" : "8d669fe8fa434a3e47abde3b40d924d91932e8e19d88b20c778a3e1c77621ebc"
                                 }
                             ],
                             "cleanup" : [
@@ -659,27 +659,26 @@
                     "sources" : [
                         {
                             "type" : "archive",
-                            "url" : "https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.12.0/QScintilla_src-2.12.0.tar.gz",
-                            "sha256" : "2116181cce3076aa4897e36182532d0e6768081fb0cf6dcdd5be720519ab1434"
+                            "url" : "https://www.riverbankcomputing.com/static/Downloads/QScintilla/2.12.1/QScintilla_src-2.12.1.tar.gz",
+                            "sha256" : "a7331c44b5d7320cbf58cb2382c38857e9e9f4fa52c405bd7776c8b6649836c2"
                         }
                     ],
                     "build-commands" : [
-                        "sed -e 's|\(target.path\) = .*|\1 = /app/lib|' -i src/qscintilla.pro",
-                        "sed -e 's|\(header.path\) = .*|\1 = /app/include|' -i src/qscintilla.pro",
-                        "sed -e 's|\(trans.path\) = .*|\1 = /app/share/qt5/translations|' -i src/qscintilla.pro",
-                        "sed -e 's|\(qsci.path\) = .*|\1 = /app/share/qt5|' -i src/qscintilla.pro",
-                        "sed -e 's|\(features.path\) = .*|\1 = /app/lib/qt5/mkspecs/features|' -i src/qscintilla.pro",
-                        "sed -e \"s|qmake = {'CONFIG': 'qscintilla2'}|qmake = {'CONFIG': 'qscintilla2', 'QT': 'widgets printsupport'}|\" -i Python/configure.py",
+                        "sed -e 's|\\(target.path\\) = .*|\\1 = /app/lib|' -i src/qscintilla.pro",
+                        "sed -e 's|\\(header.path\\) = .*|\\1 = /app/include|' -i src/qscintilla.pro",
+                        "sed -e 's|\\(trans.path\\) = .*|\\1 = /app/share/qt5/translations|' -i src/qscintilla.pro",
+                        "sed -e 's|\\(qsci.path\\) = .*|\\1 = /app/share/qt5|' -i src/qscintilla.pro",
+                        "sed -e 's|\\(features.path\\) = .*|\\1 = /app/lib/qt5/mkspecs/features|' -i src/qscintilla.pro",
+                        "# sed -e \"s|qmake = {'CONFIG': 'qscintilla2'}|qmake = {'CONFIG': 'qscintilla2', 'QT': 'widgets printsupport'}|\" -i Python/configure.py",
 
                         "# make install -C Qt4Qt5",
                         "# sip-build --target-dir /app/lib/python3.8/site-packages/ --no-make --qsci-features-dir Qt4Qt5/features --qsci-include-dir Qt4Qt5 --qsci-library-dir Qt4Qt5",
                         "# echo \"LIBS += /app/lib/libqscintilla2_qt5.so\" >> build/Qsci/Qsci.pro",
                         "# echo \"QT += widgets printsupport\" >> build/Qsci/Qsci.pro",
 
-                        "cd src && qmake && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install",
-                        "cd Python && sip-install",
-                        "echo \"LIBS += /app/lib/libqscintilla2_qt5.so\" >> Python/Qsci/Qsci.pro",
-                        "cd Python && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install"
+                        "cd src && QMAKEFEATURES=$PWD/src/features/ qmake PREFIX=/app && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install",
+                        "cd Python && mv pyproject{-qt5,}.toml && sip-build --no-make --qsci-features-dir ../src/features --qsci-include-dir ../src --qsci-library-dir ../src --target-dir /app/lib/python3.8/site-packages",
+                        "cd Python/build && make -j ${FLATPAK_BUILDER_N_JOBS:-`nproc`} && make install"
                     ]
                 },
                 {
@@ -749,8 +748,8 @@
                         },
                         {
                             "type": "file",
-                            "url": "https://files.pythonhosted.org/packages/39/fc/f91eac5a39a65f75a7adb58eac7fa78871ea9872283fb9c44e6545998134/requests-2.25.0-py2.py3-none-any.whl",
-                            "sha256": "e786fa28d8c9154e6a4de5d46a1d921b8749f8b74e28bde23768e5e16eece998"
+                            "url": "https://pypi.python.org/packages/e4/b0/286e8a936158e5cc5791d5fa3bc4b1d5a7e1ff4e5b3f3766b63d8e97708a/requests-2.14.2-py2.py3-none-any.whl",
+                            "sha256": "3b39cde35be51762885631cf586f4dc2284951b44d479a4454020758d767cc2f"
                         },
                         {
                             "type" : "file",
@@ -806,20 +805,7 @@
                         }
                     ],
                     "modules": [
-                        "shared-modules/glu/glu-9.json",
-                        {
-                            "name": "zstd",
-                            "buildsystem": "cmake-ninja",
-                            "config-opts": [ "-DCMAKE_BUILD_TYPE=Release" ],
-                            "subdir": "build/cmake",
-                            "sources": [
-                                {
-                                    "type": "git",
-                                    "url": "https://github.com/facebook/zstd.git",
-                                    "branch" : "v1.4.9"
-                                }
-                            ]
-                        }
+                        "shared-modules/glu/glu-9.json"
                     ]
                 },
                 {
@@ -949,7 +935,7 @@
                         {
                             "type" : "git",
                             "url" : "https://github.com/pygments/pygments.git",
-                            "branch" : "2.7.4"
+                            "branch" : "2.8.1"
                         }
                     ]
                 },
@@ -966,7 +952,7 @@
                         {
                             "type": "git",
                             "url": "https://github.com/Exiv2/exiv2",
-                            "branch" : "v0.27.2"
+                            "branch" : "v0.27.3"
                         }
                     ]
                 },
@@ -981,8 +967,8 @@
                     "sources": [
                         {
                             "type": "archive",
-                            "url": "https://github.com/protocolbuffers/protobuf/releases/download/v3.14.0/protobuf-cpp-3.14.0.tar.gz",
-                            "sha256": "50ec5a07c0c55d4ec536dd49021f2e194a26bfdbc531d03d1e9d4d3e27175659"
+                            "url": "https://github.com/protocolbuffers/protobuf/releases/download/v3.15.5/protobuf-cpp-3.15.5.tar.gz",
+                            "sha256": "b4732fb25d2cdfd8d7984db9a31a3f15efd2391e88edfc93fddfb31b6698c44d"
                         }
                     ]
                 },
