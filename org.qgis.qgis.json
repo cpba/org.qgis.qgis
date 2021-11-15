@@ -227,7 +227,9 @@
                         "--with-rename-internal-libgeotiff-symbols",
                         "--with-jpeg12",
                         "--with-armadillo",
-                        "--with-libkml=/app"
+                        "--with-libkml=/app",
+                        "--with-jpeg=internal",
+                        "--with-libtiff=internal"
                     ],
                     "sources" : [
                         {
